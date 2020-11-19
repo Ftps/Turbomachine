@@ -59,7 +59,7 @@ rho1 = (P01/(R*T01))*(T1/T01)^(1/(k-1));
 %
 %					/ U - ww*0.5*(r1+r2)
 %	f(r1, r2, ww) = | Umax - ww*r2
-%					\ rho1*pi*(r2^2-r1^2)*vc - m
+%					
 
 options = optimoptions('fsolve','Display','iter');
 f = @(x) [U - x(3)*(x(1)+x(2))/2, Umax - x(3)*x(2), rho1*pi*(x(2)^2-x(1)^2)*vc - m];
