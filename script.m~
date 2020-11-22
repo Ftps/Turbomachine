@@ -37,10 +37,11 @@ b1 = atand(t_a2);
 a2 = atand(t_a2);
 b2 = atand(t_b2);
 
-% Meridional rotational speed and inlet velocity
+% Meridional rotational speed and velocities
 U = sqrt(w/psi);
 vc = phi*U;
 v1 = vc/cosd(a1);
+v2 = vc/cosd(a2);
 
 % Mean, top and bottom radii (inlet), and angular speed of the rotor
 T1 = T01 - (v1^2)/(2*cp);
@@ -59,7 +60,7 @@ rho1 = (P01/(R*T01))*(T1/T01)^(1/(k-1));
 %
 %					/ U - ww*0.5*(r1+r2)
 %	f(r1, r2, ww) = | Umax - ww*r2
-%					
+%					\ rho1*pi*(r2^2-r1^2)*vc - m
 
 options = optimoptions('fsolve','Display','iter');
 f = @(x) [U - x(3)*(x(1)+x(2))/2, Umax - x(3)*x(2), rho1*pi*(x(2)^2-x(1)^2)*vc - m];
@@ -69,3 +70,42 @@ r1 = x(1);
 r2 = x(2);
 ww = x(3);
 rm = 0.5*(r1+r2);
+
+p = zeros(2*n_stages+1, 1);
+p0 = zeros(2*n_stages+1, 1);
+T = zeros(2*n_stages+1, 1);
+T0 = zeros(2*n_stages+1, 1);
+R1 = zeros(2*n_stages+1, 1);
+R2 = zeros(2*n_stages+1, 1);
+
+x = (1:(2*(n_stages+1)))./2;
+x = x(2:end);
+
+for i = 1:(2*n_stages+1)
+	if i == 1
+		p0(1) = P01;
+		T0(1) = T01;
+		R1(1) = r1;
+		R2(1) = r2;
+		T(1) = T1;
+		p(1) = P01*(T1/T01)^(k/(k-1));
+	elseif mod(i,2) == 0
+		p0(i) = pp*p0(i-1);
+		T0(i) = T0(i-1)*(pp^((k-1)/(k*n_pl)));
+		T(i) = T0(i) - (v2^2)/(2*cp);
+		p(i) = p0(i)*(T(i)/T0(i))^(k/(k-1));
+		
+		rho1 = p(i)/(R*T(i));
+		f = @(x) [rm - 0.5*(x(2) + x(1)), rho1*pi*(x(2)^2-x(1)^2)*vc - m];
+		x = fsolve(f, [0.5, 1, 356], options);
+	else
+		p0(i) = p0(i-1);
+		T0(i) = T0(i-1);
+		T(i) = T0(i) - (v1^2)/(2*cp);
+		p(i) = p0(i)*(T(i)/T0(i))^(k/(k-1));
+		
+		rho1 = p(i)/(R*T(i));
+		f = @(x) [rm - 0.5*(x(2) + x(1)), rho1*pi*(x(2)^2-x(1)^2)*vc - m];
+		x = fsolve(f, [R1(i-1), R2(i-1), 356], options);
+	end
+end

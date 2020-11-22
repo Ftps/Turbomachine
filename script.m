@@ -27,20 +27,21 @@ psi = 0.4;
 phi = 0.9;
 
 % Velocity triangle angles
-t_a1 = (psi/2 + 1 - r)/phi;
+t_a1 = (-psi/2-r+1)/phi;
 t_b1 = t_a1 - 1/phi;
-t_b2 = (phi*t_a1 - 1 - psi)/phi;
+t_b2 = (phi*t_a1 - 1 + psi)/phi;
 t_a2 = t_b2 + 1/phi;
 
 a1 = atand(t_a1);
-b1 = atand(t_a2);
+b1 = atand(t_b1);
 a2 = atand(t_a2);
 b2 = atand(t_b2);
 
-% Meridional rotational speed and inlet velocity
+% Meridional rotational speed and velocities
 U = sqrt(w/psi);
 vc = phi*U;
 v1 = vc/cosd(a1);
+v2 = vc/cosd(a2);
 
 % Mean, top and bottom radii (inlet), and angular speed of the rotor
 T1 = T01 - (v1^2)/(2*cp);
@@ -69,3 +70,52 @@ r1 = x(1);
 r2 = x(2);
 ww = x(3);
 rm = 0.5*(r1+r2);
+
+% Allocate space for the properties at all stage positions
+p = zeros(2*n_stages+1, 1);
+p0 = zeros(2*n_stages+1, 1);
+T = zeros(2*n_stages+1, 1);
+T0 = zeros(2*n_stages+1, 1);
+R1 = zeros(2*n_stages+1, 1);
+R2 = zeros(2*n_stages+1, 1);
+
+% Vector for plotting
+xx = (1:(2*(n_stages+1)))./2;
+xx = xx(2:end);
+
+% Cycle that moves through all stage positions
+for i = 1:(2*n_stages+1)
+	% Stage one inlet
+	if i == 1
+		p0(1) = P01;
+		T0(1) = T01;
+		R1(1) = r1;
+		R2(1) = r2;
+		T(1) = T1;
+		p(1) = P01*(T1/T01)^(k/(k-1));
+	% Position between rotor and stator
+	elseif mod(i,2) == 0
+		p0(i) = pp*p0(i-1);
+		T0(i) = T0(i-1)*(pp^((k-1)/(k*n_pl)));
+		T(i) = T0(i) - (v2^2)/(2*cp);
+		p(i) = p0(i)*(T(i)/T0(i))^(k/(k-1));
+		
+		rho1 = p(i)/(R*T(i));
+		f = @(x) [rm - 0.5*(x(2) + x(1)), rho1*pi*(x(2)^2-x(1)^2)*vc - m];
+		x = fsolve(f, [R1(i-1), R2(i-1)], options);
+		R1(i) = x(1);
+		R2(i) = x(2);
+	% Position between stages
+	else
+		p0(i) = p0(i-1);
+		T0(i) = T0(i-1);
+		T(i) = T0(i) - (v1^2)/(2*cp);
+		p(i) = p0(i)*(T(i)/T0(i))^(k/(k-1));
+		
+		rho1 = p(i)/(R*T(i));
+		f = @(x) [rm - 0.5*(x(2) + x(1)), rho1*pi*(x(2)^2-x(1)^2)*vc - m];
+		x = fsolve(f, [R1(i-1), R2(i-1)], options);
+		R1(i) = x(1);
+		R2(i) = x(2);
+	end
+end
