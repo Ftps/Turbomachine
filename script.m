@@ -119,3 +119,9 @@ for i = 1:(2*n_stages+1)
 		R2(i) = x(2);
 	end
 end
+
+l1 = 0.04*ones(n_stages, 1);
+l2 = 0.05*ones(n_stages, 1);
+s1 = 0.005*ones(n_stages, 1);
+s2 = 0.005*ones(n_stages-1, 1);
+plotGasPath(R1, R2, l1, l2, s1, s2);
