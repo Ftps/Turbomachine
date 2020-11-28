@@ -151,6 +151,17 @@ legend("Total Temperature", "Static Temperature", "Location", "Northwest");
 axis([0 n_stages+2 T(1)-100 T0(end)+100]);
 hold off;
 
+s = cp*log(T0/T01) - R*log(p0/P01);
+figure();
+plot(s, T0, "r");
+hold on;
+plot(s, T0, "ro");
+xlabel("(s - s_0) - J/kg K");
+ylabel("T - K");
+grid on;
+hold off;
+
+
 xx = 1:n_stages;
 figure();
 plot(xx, beta, "r");
