@@ -1,3 +1,4 @@
+clear all; close all; clc;
 % Air/Physical properties
 bar = 1e5;
 k = 1.4;
@@ -21,7 +22,7 @@ w = cp*T01*(pp^((k-1)/(n_pl*k)) - 1);
 
 % Total specific work and number of stages
 w_tot = cp*T01*(pp_total^((k-1)/(n_pl*k)) - 1);
-n_stages = ceil(w_tot/w);
+n_stages = ceil(w_tot/w)+1;
 
 % Real stage specific work and first stage pressure ratios and efficiency
 w = w_tot/n_stages;
@@ -30,8 +31,9 @@ n_is = (pp^((k-1)/k) - 1)/(pp^((k-1)/(n_pl*k)) - 1);
 
 
 %% Related values from the Smith charts
+n_is = 0.9025;
 r = 0.5;
-psi = 0.45;
+psi = 0.425;
 phi = 0.7;
 
 % Velocity triangle angles
@@ -107,7 +109,7 @@ for i = 1:(2*n_stages+1)
 	elseif mod(i,2) == 0
 		T0(i) = T0(i-1) + w/cp;
 		T(i) = T0(i) - (v2^2)/(2*cp);
-		beta(i/2) = (w/(cp*T0(i-1)) + 1)^((n_pl*k)/(k-1));
+		beta(i/2) = (n_is*w/(cp*T0(i-1)) + 1)^(k/(k-1));
 		p0(i) = beta(i/2)*p0(i-1);
 		p(i) = p0(i)*(T(i)/T0(i))^(k/(k-1));
 		
@@ -132,23 +134,23 @@ for i = 1:(2*n_stages+1)
 end
 
 figure();
-plot(xx, p0./bar, "r");
+plot(xx, p0./(P01), "r");
 hold on;
-plot(xx, p./bar, "b");
+plot(xx, p./(P01), "b");
 xlabel("stage #");
-ylabel("p - bar");
+ylabel("p - p/p01");
 legend("Total Pressure", "Static Pressure", "Location", "Northwest");
-axis([0 n_stages+2 0 1+(P01*pp_total)/bar]);
+axis([0 n_stages+2 0 1+(P01*pp_total)/(P01)]);
 hold off;
 
 figure();
-plot(xx, T0, "r");
+plot(xx, T0./T01, "r");
 hold on;
-plot(xx, T, "b");
+plot(xx, T./T01, "b");
 xlabel("stage #");
-ylabel("T - K");
+ylabel("T - T/T01");
 legend("Total Temperature", "Static Temperature", "Location", "Northwest");
-axis([0 n_stages+2 T(1)-100 T0(end)+100]);
+axis([0 n_stages+2 0 T0(end)/T01+1]);
 hold off;
 
 s = cp*log(T0/T01) - R*log(p0/P01);
@@ -167,12 +169,15 @@ figure();
 plot(xx, beta, "r");
 xlabel("stage #");
 ylabel("pressure ratio - \beta");
-axis([0 n_stages+1 0.5 2])
+axis([0 n_stages+1 0.5 2]);
 grid on;
 
 
-l1 = 0.04*ones(n_stages, 1);
-l2 = 0.05*ones(n_stages, 1);
+l1 = 0.03*ones(n_stages, 1);
+l2 = 0.03*ones(n_stages, 1);
 s1 = 0.005*ones(n_stages, 1);
-s2 = 0.005*ones(n_stages-1, 1);
+s2 = 0.01*ones(n_stages-1, 1);
 plotGasPath(R1, R2, l1, l2, s1, s2);
+
+n_tt = ((p0(end)/P01)^((k-1)/k) - 1)*T01/(T0(end) - T01);
+n_pl = (k-1)/k*log(p0(end)/P01)/log(T0(end)/T01);

@@ -1,3 +1,4 @@
+clear all; close all; clc;
 % Air/Physical properties
 bar = 1e5;
 k = 1.4;
@@ -22,6 +23,8 @@ w = cp*T01*(pp^((k-1)/(n_pl*k)) - 1);
 % Total specific work and number of stages
 w_tot = cp*T01*(pp_total^((k-1)/(n_pl*k)) - 1);
 n_stages = ceil(w_tot/w);
+
+% Real stage specific work and first stage pressure ratios and efficiency
 w = w_tot/n_stages;
 pp = (w/(cp*T01) + 1)^((n_pl*k)/(k-1));
 n_is = (pp^((k-1)/k) - 1)/(pp^((k-1)/(n_pl*k)) - 1);
@@ -51,7 +54,7 @@ v2 = vc/cosd(a2);
 
 % Mean, top and bottom radii (inlet), and angular speed of the rotor
 T1 = T01 - (v1^2)/(2*cp);
-Umax = sqrt(k*R*T1);	% Limiting condition for the top blade height
+Umax = 0.95*sqrt(k*R*T1);	% Limiting condition for the top blade height
 rho1 = (P01/(R*T01))*(T1/T01)^(1/(k-1));
 
 % Constraints for the radii and rotacional speed:
@@ -130,31 +133,42 @@ for i = 1:(2*n_stages+1)
 end
 
 figure();
-plot(xx, p0./bar, "r");
+plot(xx, p0./(P01*bar), "r");
 hold on;
-plot(xx, p./bar, "b");
+plot(xx, p./(P01*bar), "b");
 xlabel("stage #");
-ylabel("p - bar");
+ylabel("p - p/p01");
 legend("Total Pressure", "Static Pressure", "Location", "Northwest");
-axis([0 n_stages+1 0 );
+axis([0 n_stages+2 0 1+(P01*pp_total)/bar]);
 hold off;
 
 figure();
-plot(xx, T0, "r");
+plot(xx, T0./T01, "r");
 hold on;
-plot(xx, T, "b");
+plot(xx, T./T01, "b");
 xlabel("stage #");
-ylabel("T - K");
+ylabel("T - T/T01");
 legend("Total Temperature", "Static Temperature", "Location", "Northwest");
-axis padded;
+axis([0 n_stages+2 0 T0(end)/T01]+1);
 hold off;
+
+s = cp*log(T0/T01) - R*log(p0/P01);
+figure();
+plot(s, T0, "r");
+hold on;
+plot(s, T0, "ro");
+xlabel("(s - s_0) - J/kg K");
+ylabel("T - K");
+grid on;
+hold off;
+
 
 xx = 1:n_stages;
 figure();
 plot(xx, beta, "r");
 xlabel("stage #");
 ylabel("pressure ratio - \beta");
-axis([0 n_stages+1 0 2])
+axis([0 n_stages+1 0.5 2]);
 grid on;
 
 
